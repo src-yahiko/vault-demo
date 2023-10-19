@@ -1,0 +1,30 @@
+{{- if .Values.microServices.myapp -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapp-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/browser-xss-filter: "true"
+    nginx.ingress.kubernetes.io/content-type-nosniff: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "360"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/force-hsts: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 150m  
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
+    kubernetes.io/ingress.class: {{ .Values.ingress.routing.meetup }}
+spec:
+  rules:
+  - host: {{ .Values.ingress.meetup.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp
+            port: 
+              number: 7000
+{{- end -}}

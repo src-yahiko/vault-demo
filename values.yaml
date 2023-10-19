@@ -12,3 +12,11 @@ myapp:
 
 vault:
   TOKEN: "admin"
+
+ingress:
+  routing: 
+    meetup: "public"
+  meetup:
+    host: meetup.com
+  vault:
+   host: meetup-vault.com

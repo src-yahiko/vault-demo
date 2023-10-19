@@ -16,7 +16,7 @@ spec:
         service: vault
     spec:
       containers:
-        - name: myapp
+        - name: vault
           image: hashicorp/vault:latest
           imagePullPolicy: Always
           ports:

@@ -11,7 +11,9 @@ data:
         VAULT_HEADER="X-Vault-Token: $VAULT_TOKEN"
 
         echo "Installing necessary packages: curl and jq..."
-        which apk && apk update && apk add --no-cache curl jq
+        which apt-get && apt-get update && apt-get install -y curl jq
+        curl
+        jq
 
         HTTP_STATUS_CODE=$(curl -s --location "$VAULT_ADDRESS" --header "X-Vault-Token: $VAULT_TOKEN" -o /dev/null -w "%{http_code}")
         
