@@ -1,0 +1,70 @@
+{{- if .Values.microServices.myapp -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vault-demo.fullname" . }}-myapp
+  labels:
+    service: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: myapp
+  template:
+    metadata:
+      labels:
+        service: myapp
+    spec:
+      volumes:
+        - name: vault-integration-volume
+          configMap:
+            name: vault-integration-configmap
+      containers:
+        - name: {{ .Chart.Name }}-myapp
+          image: nginx
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              #!/bin/sh
+
+              # If enabled, run the vault environment variable injection integration script
+              [ $VAULT_ENABLE = "true" ] && cp /var/tmp/vault-integration.sh /tmp/ && chmod +x /tmp/vault-integration.sh && VAULT_PATH=myapp &&. ./tmp/vault-integration.sh
+              wait
+
+              # Create index.html using environment variables 
+              TEMPLATE="<!DOCTYPE html><html><head><meta charset='UTF-8' /><title>$TEMPLATE_TITLE</title><style> body { color: $TEMPLATE_TEXT_COLOR; background-color: $TEMPLATE_BACKGROUND_COLOR; } </style></head><body><h1>$TEMPLATE_HEADER</h1><p>$TEMPLATE_CONTENT</p></body></html>"
+              echo $TEMPLATE > /usr/share/nginx/html/index.html
+              
+              # Starting the main process
+              nginx -g 'daemon off;'
+          volumeMounts:
+            - name: vault-integration-volume
+              mountPath: /var/tmp
+          env:
+            - name: VAULT_ENABLE
+              value: {{ .Values.myapp.VAULT_ENABLE | quote }}
+            - name: TEMPLATE_TITLE
+              value: {{ .Values.myapp.TEMPLATE_TITLE | quote }}
+            - name: TEMPLATE_TEXT_COLOR
+              value: {{ .Values.myapp.TEMPLATE_TEXT_COLOR | quote }}
+            - name: TEMPLATE_BACKGROUND_COLOR
+              value: {{ .Values.myapp.TEMPLATE_BACKGROUND_COLOR | quote }}
+            - name: TEMPLATE_HEADER
+              value: {{ .Values.myapp.TEMPLATE_HEADER | quote }}
+            - name: TEMPLATE_CONTENT
+              value: {{ .Values.myapp.TEMPLATE_CONTENT | quote }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+           {{ if eq .Values.myapp.VAULT_ENABLE true }}     
+           {{- $p := dict "VAULT_PATH" "myapp" -}}
+           {{- include "vault-demo.livenessprobe" $p | indent 10 -}}
+           {{ end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+{{- end -}}

@@ -1,0 +1,31 @@
+{{- if .Values.microServices.vault -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vault-demo.fullname" . }}-vault
+  labels:
+    service: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: vault
+  template:
+    metadata:
+      labels:
+        service: vault
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-myapp
+          image: hashicorp/vault:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8200
+              protocol: TCP
+          env:
+            - name: VAULT_DEV_ROOT_TOKEN_ID
+              value: {{ .Values.vault.TOKEN | quote }}
+            - name: VAULT_ADDR
+              value: "http://localhost:8200"
+{{- end -}}

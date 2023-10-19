@@ -1,0 +1,15 @@
+microServices:
+  myapp: true
+  vault: true
+  test: true
+
+myapp:
+  VAULT_ENABLE: true
+  TEMPLATE_TITLE: "My title"
+  TEMPLATE_TEXT_COLOR: "black"
+  TEMPLATE_BACKGROUND_COLOR: "whitesmoke"
+  TEMPLATE_HEADER: "Hello, world!"
+  TEMPLATE_CONTENT: "This is a demo."
+
+vault:
+  TOKEN: "admin"

@@ -1,0 +1,17 @@
+{{- if .Values.microServices.vault -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "vault-demo.fullname" . }}-vault
+  labels:
+    service: vault
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8200
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    service: vault
+{{- end -}}

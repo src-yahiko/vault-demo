@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-integration-configmap
+data:
+  vault-integration.sh: |
+    if [ "$VAULT_ENABLE" = "true" ]; then
+
+        VAULT_TOKEN="admin"
+        VAULT_ADDRESS="http://$VAULT_DEMO_VAULT_SERVICE_HOST:$VAULT_DEMO_VAULT_SERVICE_PORT/v1/secret/data/$VAULT_PATH"
+        VAULT_HEADER="X-Vault-Token: $VAULT_TOKEN"
+
+        echo "Installing necessary packages: curl and jq..."
+        which apk && apk update && apk add --no-cache curl jq
+        which apt-get && apt-get update && apt-get install -y curl jq
+
+
+        HTTP_STATUS_CODE=$(curl -s --location "$VAULT_ADDRESS" --header "X-Vault-Token: $VAULT_TOKEN" -o /dev/null -w "%{http_code}")
+        
+        if [ "$HTTP_STATUS_CODE" = "000" ]; then
+            echo "Service not found on given URL: $VAULT_ADDRESS"
+        elif [ "$HTTP_STATUS_CODE" = "404" ]; then
+            echo "Store does not exist. Initializing Vault store in $VAULT_PATH for the first time..."
+            BODY=$(env | sort | jq -R -n 'reduce inputs as $line ({}; . + ($line | split("=") | {(.[0]): .[1]})) | {"data": .}')
+            curl -s -H "$VAULT_HEADER" -H "Content-Type: application/json" -X POST -d "$BODY" "$VAULT_ADDRESS" -o /dev/null
+            echo 1 > /tmp/version.txt
+        elif [ "$HTTP_STATUS_CODE" = "403" ]; then
+            echo "Incorrect token: $VAULT_TOKEN for $VAULT_ADDRESS"
+        else
+            JSON_DATA="$(curl -s -H "$VAULT_HEADER" "$VAULT_ADDRESS")"
+            echo "$( echo $JSON_DATA | jq -r '.data.metadata.version')" > /tmp/version.txt
+            echo "Exporting variables for $VAULT_PATH with version $(cat /tmp/version.txt)"
+            keys=$(echo "$JSON_DATA" | jq -r '.data.data | keys[]')
+            for key in $keys; do
+                value=$(echo "$JSON_DATA" | jq -r ".data.data[\"$key\"]")
+                export "$key"="$value"
+                echo "Exporting variable: $key=$value"
+            done
+        fi
+    else
+    echo "VAULT_ENABLE is not set to true. Doing nothing and moving on as expected."
+    fi
