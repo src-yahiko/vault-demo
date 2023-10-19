@@ -26,5 +26,5 @@ spec:
           service:
             name: myapp
             port: 
-              number: 7000
+              number: 80
 {{- end -}}
