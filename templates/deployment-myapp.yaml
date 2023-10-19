@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vault-demo.fullname" . }}-myapp
+  name: myapp
   labels:
     service: myapp
 spec:
@@ -20,7 +20,7 @@ spec:
           configMap:
             name: vault-integration-configmap
       containers:
-        - name: {{ .Chart.Name }}-myapp
+        - name: myapp
           image: nginx
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
@@ -59,12 +59,43 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-           {{ if eq .Values.myapp.VAULT_ENABLE true }}     
-           {{- $p := dict "VAULT_PATH" "myapp" -}}
-           {{- include "vault-demo.livenessprobe" $p | indent 10 -}}
-           {{ end }}
           readinessProbe:
             httpGet:
               path: /
               port: http
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                VAULT_PATH="myapp"
+                VAULT_TOKEN="admin"
+                VAULT_ADDRESS="http://$VAULT_SERVICE_HOST:$VAULT_SERVICE_PORT/v1/secret/data/$VAULT_PATH"
+                VAULT_HEADER="X-Vault-Token: $VAULT_TOKEN"
+
+                HTTP_STATUS_CODE=$(curl -s --location "$VAULT_ADDRESS" --header "X-Vault-Token: $VAULT_TOKEN" -o /dev/null -w "%{http_code}")
+              
+                if [ "$HTTP_STATUS_CODE" = "000" ]; then
+                  echo "Service not found on given URL: $VAULT_ADDRESS"
+                  exit 0
+                elif [ "$HTTP_STATUS_CODE" = "404" ]; then
+                  echo "Route not found on given URL: $VAULT_ADDRESS"
+                  exit 0
+                elif [ "$HTTP_STATUS_CODE" = "403" ]; then
+                  echo "Incorrect token: $VAULT_TOKEN for $VAULT_ADDRESS"
+                  exit 0
+                else
+                  echo "Status code: $HTTP_STATUS_CODE"
+                  echo "$(curl -s -H "$VAULT_HEADER" "$VAULT_ADDRESS" | jq -r '.data.metadata.version')" > /tmp/liveness-version.txt
+                  if cmp -s /tmp/version.txt /tmp/liveness-version.txt; then 
+                    echo "Environment variable version $(cat /tmp/liveness-version.txt) is up to date"
+                    exit 0
+                  else
+                    echo "New environment variable version $(cat /tmp/liveness-version.txt) detected"
+                    exit 1
+                  fi
+                fi
+            initialDelaySeconds: 10
+            periodSeconds: 2
 {{- end -}}

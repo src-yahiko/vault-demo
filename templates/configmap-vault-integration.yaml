@@ -7,13 +7,11 @@ data:
     if [ "$VAULT_ENABLE" = "true" ]; then
 
         VAULT_TOKEN="admin"
-        VAULT_ADDRESS="http://$VAULT_DEMO_VAULT_SERVICE_HOST:$VAULT_DEMO_VAULT_SERVICE_PORT/v1/secret/data/$VAULT_PATH"
+        VAULT_ADDRESS="http://$VAULT_SERVICE_HOST:$VAULT_SERVICE_PORT/v1/secret/data/$VAULT_PATH"
         VAULT_HEADER="X-Vault-Token: $VAULT_TOKEN"
 
         echo "Installing necessary packages: curl and jq..."
         which apk && apk update && apk add --no-cache curl jq
-        which apt-get && apt-get update && apt-get install -y curl jq
-
 
         HTTP_STATUS_CODE=$(curl -s --location "$VAULT_ADDRESS" --header "X-Vault-Token: $VAULT_TOKEN" -o /dev/null -w "%{http_code}")
         

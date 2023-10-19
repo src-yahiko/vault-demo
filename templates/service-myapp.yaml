@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "vault-demo.fullname" . }}-myapp
+  name: myapp
   labels:
     service: myapp
 spec:

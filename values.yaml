@@ -1,7 +1,6 @@
 microServices:
   myapp: true
   vault: true
-  test: true
 
 myapp:
   VAULT_ENABLE: true

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vault-demo.fullname" . }}-vault
+  name: vault
   labels:
     service: vault
 spec:
@@ -16,9 +16,9 @@ spec:
         service: vault
     spec:
       containers:
-        - name: {{ .Chart.Name }}-myapp
+        - name: myapp
           image: hashicorp/vault:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8200
